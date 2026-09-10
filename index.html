@@ -1,0 +1,136 @@
+
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rainbow Todo Reminder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700;900&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.3/dist/tailwind.min.css"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      html, body {
+        font-family: 'Merriweather', serif;
+      }
+      body {
+        background: linear-gradient(135deg, #ff4d6d, #ffb703, #06d6a0, #4cc9f0, #9b5de5);
+        background-size: 400% 400%;
+        animation: gradientShift 16s ease infinite;
+      }
+      @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      .glass {
+        background: rgba(255, 255, 255, 0.18);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+      }
+    </style>
+  </head>
+  <body class="min-h-screen text-white">
+    <div class="max-w-3xl mx-auto px-4 py-6 sm:py-10">
+      <header class="text-center mb-6 sm:mb-8">
+        <div class="inline-block px-4 py-2 rounded-full bg-white bg-opacity-20 text-sm font-bold tracking-wide shadow-lg">
+          🌈 Dynamic Todo Reminder
+        </div>
+        <h1 class="mt-4 text-3xl sm:text-5xl font-black leading-tight drop-shadow-lg">
+          Turn tasks into timely wins
+        </h1>
+        <p class="mt-3 text-base sm:text-lg font-medium text-white text-opacity-95">
+          Create a todo, get a reminder, and watch completed tasks move to the finished tab automatically.
+        </p>
+      </header>
+
+      <main class="space-y-6">
+        <section class="glass rounded-2xl shadow-2xl border border-white border-opacity-20 p-5 sm:p-6">
+          <form id="todoForm" class="space-y-4">
+            <div>
+              <label for="taskDescription" class="block text-sm font-bold mb-2">Task description</label>
+              <input id="taskDescription" type="text" required placeholder="e.g. Finish project report"
+                class="w-full rounded-xl px-4 py-3 text-gray-900 placeholder-gray-500 bg-white focus:outline-none focus:ring-4 focus:ring-yellow-300" />
+            </div>
+
+            <div>
+              <label for="dueDate" class="block text-sm font-bold mb-2">Due date</label>
+              <input id="dueDate" type="date" required
+                class="w-full rounded-xl px-4 py-3 text-gray-900 bg-white focus:outline-none focus:ring-4 focus:ring-yellow-300" />
+            </div>
+
+            <div>
+              <label for="notificationTime" class="block text-sm font-bold mb-2">Notification time</label>
+              <input id="notificationTime" type="time" required
+                class="w-full rounded-xl px-4 py-3 text-gray-900 bg-white focus:outline-none focus:ring-4 focus:ring-yellow-300" />
+            </div>
+
+            <button type="submit"
+              class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-r from-pink-500 via-red-500 to-yellow-400 text-white font-black shadow-lg transform transition hover:scale-105 focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-60">
+              Submit
+            </button>
+          </form>
+        </section>
+
+        <section class="glass rounded-2xl shadow-2xl border border-white border-opacity-20 p-5 sm:p-6">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-xl sm:text-2xl font-black">Output</h2>
+            <div class="text-xs sm:text-sm bg-white bg-opacity-20 px-3 py-1 rounded-full font-bold">AI Response</div>
+          </div>
+          <pre id="output" class="whitespace-pre-wrap break-words text-sm sm:text-base leading-6 text-white font-medium bg-black bg-opacity-20 rounded-xl p-4 min-h-[180px] overflow-auto"></pre>
+        </section>
+      </main>
+
+      <footer class="text-center py-8 text-white text-opacity-95">
+        <a href="https://www.youtube.com/@RiyadhaMarketingAgency" target="_blank" rel="noopener noreferrer" class="font-bold underline hover:text-yellow-200 transition">
+          Made with ❤️
+        </a>
+      </footer>
+    </div>
+
+    <script>
+      const form = document.getElementById("todoForm");
+      const output = document.getElementById("output");
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        const taskDescription = document.getElementById("taskDescription").value.trim();
+        const dueDate = document.getElementById("dueDate").value;
+        const notificationTime = document.getElementById("notificationTime").value;
+
+        const substitutedPrompt = `Generate a dynamic todo list app that reminds the user to complete the task "${taskDescription}" by ${dueDate} at ${notificationTime}, and once completed, moves it to the completed tab.`;
+
+        output.innerText = "";
+
+        const ws = new WebSocket("wss://backend.buildpicoapps.com/ask_ai_streaming_v2");
+
+        ws.addEventListener("open", () => {
+          ws.send(
+            JSON.stringify({
+              appId: "may-suddenly",
+              prompt: substitutedPrompt,
+            })
+          );
+        });
+
+        ws.addEventListener("message", (event) => {
+          console.log(event.data);
+          output.innerText = `${output.innerText}${event.data}`;
+        });
+
+        ws.addEventListener("close", (event) => {
+          console.log("Connection closed", event.code, event.reason);
+          if (event.code != 1000) {
+            alert("Oops, we ran into an error. Refresh the page and try again.");
+          }
+        });
+
+        ws.addEventListener("error", (error) => {
+          console.log("WebSocket error", error);
+          alert("Oops, we ran into an error. Refresh the page and try again.");
+        });
+      });
+    </script>
+  </body>
+</html>
